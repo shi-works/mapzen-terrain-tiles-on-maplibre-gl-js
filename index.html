@@ -1,0 +1,109 @@
+<html>
+
+<head>
+    <title>AWS Terrain Tiles(Mapzen Terrain Tiles)</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src='https://unpkg.com/maplibre-gl@3.4.1/dist/maplibre-gl.js'></script>
+    <link href='https://unpkg.com/maplibre-gl@3.4.1/dist/maplibre-gl.css' rel='stylesheet' />
+    <style>
+        body {
+            margin: 0;
+        }
+
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <script type="text/javascript">
+        // マップの初期化
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://tile.openstreetmap.jp/styles/maptiler-basic-ja/style.json',
+            zoom: 12.46,
+            minZoom: 1,
+            maxZoom: 23,
+            pitch: 73,
+            bearing: -36,
+            maxPitch: 85,
+            center: [138.76069, 35.34967],
+            hash: true,
+            attributionControl: false,
+        });
+
+        // ズーム・回転
+        map.addControl(new maplibregl.NavigationControl());
+
+        // フルスクリーンモードのオンオフ
+        map.addControl(new maplibregl.FullscreenControl());
+
+        // 現在位置表示
+        map.addControl(new maplibregl.GeolocateControl({
+            positionOptions: {
+                enableHighAccuracy: false
+            },
+            fitBoundsOptions: { maxZoom: 18 },
+            trackUserLocation: true,
+            showUserLocation: true
+        }));
+
+        // スケール表示
+        map.addControl(new maplibregl.ScaleControl({
+            maxWidth: 200,
+            unit: 'metric'
+        }));
+
+        // Attributionを折りたたみ表示
+        map.addControl(new maplibregl.AttributionControl({
+            compact: true,
+            customAttribution: '（<a href="https://twitter.com/shi__works" target="_blank">Twitter</a> | <a href="https://github.com/shi-works/mapzen-terrain-tiles-on-maplibre-gl-js">Github</a>） '
+        }));
+
+        // 3D地形コントロール
+        map.addControl(
+            new maplibregl.TerrainControl({
+                source: 'tilezen-dem',
+                exaggeration: 1 // 標高を強調する倍率
+            })
+        );
+
+        map.on('load', () => {
+            // 標高タイルソース
+            map.addSource("tilezen-dem", {
+                type: 'raster-dem',
+                tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+                attribution: '<a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">Tilezen Joerd: Attribution</a>',
+                encoding: "terrarium"
+            });
+
+            // 標高タイルセット
+            map.setTerrain({ 'source': 'tilezen-dem', 'exaggeration': 1 });
+
+            // 陰影起伏図レイヤ
+            map.addLayer({
+                "id": "hillshade",
+                "type": "hillshade",
+                "source": "tilezen-dem",
+                "minzoom": 1,
+                "maxzoom": 18,
+                "layout": {},
+                "paint": {
+                    "hillshade-accent-color": "#5a5a5a",
+                    "hillshade-exaggeration": 0.5,
+                    "hillshade-highlight-color": "#FFFFFF",
+                    "hillshade-illumination-anchor": "viewport",
+                    "hillshade-illumination-direction": 335,
+                    "hillshade-shadow-color": "#5a5a5a"
+                }
+            });
+
+        });
+    </script>
+</body>
+
+</html>
